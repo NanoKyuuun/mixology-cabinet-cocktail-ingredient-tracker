@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mixology Cabinet</title>
+<style>
+  :root {
+    --bg: #f4efe6;
+    --panel: #ffffff;
+    --accent: #c0563f;
+    --accent-dark: #9c4431;
+    --text: #2b2620;
+    --muted: #8a7f6f;
+    --line: #e5dccb;
+    --shadow: 0 6px 20px rgba(43, 38, 32, .08);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: linear-gradient(180deg, #faf6ee 0%, var(--bg) 100%);
+    color: var(--text);
+    min-height: 100vh;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 32px 20px 60px; }
+  header { text-align: center; margin-bottom: 28px; }
+  header h1 { font-size: 2.4rem; margin: 0; color: var(--accent); letter-spacing: 1px; font-weight: 800; }
+  header p { color: var(--muted); margin: 8px 0 0; }
+
+  .layout { display: grid; grid-template-columns: 300px 1fr; gap: 24px; align-items: start; }
+
+  /* Sidebar: form + filter */
+  aside {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+    padding: 20px;
+    position: sticky; top: 20px;
+  }
+  aside h2 { margin: 0 0 14px; font-size: 1rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+  form { display: grid; gap: 12px; }
+  label { display: block; font-size: .78rem; color: var(--muted); margin-bottom: 6px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }
+  input, select {
+    width: 100%; padding: 11px 13px;
+    background: #fbf8f2; color: var(--text);
+    border: 1px solid var(--line); border-radius: 10px;
+    font-family: inherit; font-size: 1rem;
+  }
+  input:focus, select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(192,86,63,.12); }
+  button { cursor: pointer; font-family: inherit; font-size: 1rem; border: none; border-radius: 10px; padding: 11px 16px; }
+  .add { background: var(--accent); color: #fff; font-weight: 700; transition: background .15s; }
+  .add:hover { background: var(--accent-dark); }
+
+  .filter { margin-top: 22px; border-top: 1px solid var(--line); padding-top: 16px; }
+  .filter .chip {
+    display: block; width: 100%; text-align: left;
+    background: transparent; color: var(--muted);
+    border: 1px solid transparent; border-radius: 10px;
+    padding: 9px 12px; font-size: .95rem; font-weight: 600; margin-bottom: 4px;
+    transition: all .15s;
+  }
+  .filter .chip:hover { background: #fbf8f2; color: var(--text); }
+  .filter .chip.active { background: #fdf3ef; color: var(--accent); border-color: var(--accent); }
+
+  /* Shelves: grouped by category */
+  .shelf { margin-bottom: 26px; }
+  .shelf-head {
+    display: flex; align-items: baseline; gap: 10px;
+    border-bottom: 2px solid var(--line); padding-bottom: 8px; margin-bottom: 14px;
+  }
+  .shelf-head h2 { margin: 0; font-size: 1.15rem; color: var(--accent); }
+  .shelf-head span { color: var(--muted); font-size: .85rem; }
+  .row { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 14px;
+    display: flex; flex-direction: column; gap: 10px;
+    transition: transform .15s, box-shadow .15s;
+  }
+  .card:hover { transform: translateY(-3px); box-shadow: 0 10px 26px rgba(43,38,32,.12); }
+  .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .card h3 { margin: 0; font-size: 1.05rem; }
+  .note { font-size: .85rem; color: var(--muted); margin: 0; }
+  .badge { font-size: .7rem; font-weight: 700; text-transform: uppercase; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
+  .badge.in { background: #e3f2e6; color: #2e7d4f; }
+  .badge.low { background: #fdf3dd; color: #b07d1f; }
+  .badge.out { background: #fbe4e0; color: #c0392b; }
+  .status { display: flex; gap: 6px; }
+  .status button {
+    flex: 1; font-size: .7rem; font-weight: 600; padding: 6px 0;
+    background: #fbf8f2; color: var(--muted); border: 1px solid var(--line);
+  }
+  .status button.active { border-color: var(--accent); color: var(--accent); background: #fdf3ef; }
+  .del { background: transparent; color: var(--muted); border: 1px solid var(--line); padding: 6px 10px; font-size: .85rem; }
+  .del:hover { color: #c0392b; border-color: #c0392b; background: #fbe4e0; }
+  .empty { text-align: center; color: var(--muted); padding: 40px 0; }
+
+  @media (max-width: 760px) {
+    .layout { grid-template-columns: 1fr; }
+    aside { position: static; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Mixology Cabinet</h1>
+    <p>Your home bar, at a glance.</p>
+  </header>
+
+  <div class="layout">
+    <aside>
+      <h2>Add a bottle</h2>
+      <form id="form">
+        <div>
+          <label for="name">Name</label>
+          <input id="name" required placeholder="e.g. Rye Whiskey">
+        </div>
+        <div>
+          <label for="category">Category</label>
+          <select id="category">
+            <option>Whiskey</option>
+            <option>Liqueur</option>
+            <option>Bitters</option>
+            <option>Mixer</option>
+            <option>Garnish</option>
+          </select>
+        </div>
+        <div>
+          <label for="note">Tasting note / brand</label>
+          <input id="note" placeholder="e.g. High West Double Rye — spicy">
+        </div>
+        <button class="add" type="submit">Add to Cabinet</button>
+      </form>
+
+      <div class="filter">
+        <h2>Filter</h2>
+        <div id="toolbar"></div>
+      </div>
+    </aside>
+
+    <main id="grid"></main>
+  </div>
+</div>
+
+<script>
+  const CATS = ['Whiskey', 'Liqueur', 'Bitters', 'Mixer', 'Garnish'];
+  const STATUS = { in: 'In Stock', low: 'Running Low', out: 'Out' };
+  const KEY = 'mixology-cabinet';
+  let items = JSON.parse(localStorage.getItem(KEY) || '[]');
+  let filter = 'All';
+
+  const grid = document.getElementById('grid');
+  const toolbar = document.getElementById('toolbar');
+
+  function save() { localStorage.setItem(KEY, JSON.stringify(items)); }
+
+  function render() {
+    toolbar.innerHTML = ['All', ...CATS].map(c =>
+      `<button class="chip${c === filter ? ' active' : ''}" data-cat="${c}">${c}</button>`
+    ).join('');
+
+    const shown = items.filter(i => filter === 'All' || i.category === filter);
+    if (!shown.length) {
+      grid.innerHTML = `<p class="empty">Nothing on this shelf yet. Add a bottle on the left.</p>`;
+      return;
+    }
+
+    // Group into shelves by category
+    const shelves = filter === 'All' ? CATS : [filter];
+    grid.innerHTML = shelves.map(cat => {
+      const list = shown.filter(i => i.category === cat);
+      if (!list.length) return '';
+      return `
+        <section class="shelf">
+          <div class="shelf-head"><h2>${cat}</h2><span>${list.length}</span></div>
+          <div class="row">${list.map(card).join('')}</div>
+        </section>`;
+    }).join('');
+  }
+
+  function card(i) {
+    return `
+      <div class="card" data-id="${i.id}">
+        <div class="card-top">
+          <h3>${esc(i.name)}</h3>
+          <span class="badge ${i.status}">${STATUS[i.status]}</span>
+        </div>
+        ${i.note ? `<p class="note">${esc(i.note)}</p>` : ''}
+        <div class="status">
+          ${Object.entries(STATUS).map(([k, v]) =>
+            `<button class="${i.status === k ? 'active' : ''}" data-status="${k}">${v}</button>`
+          ).join('')}
+        </div>
+        <button class="del">Delete</button>
+      </div>`;
+  }
+
+  function esc(s) {
+    return s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  document.getElementById('form').addEventListener('submit', e => {
+    e.preventDefault();
+    items.push({
+      id: Date.now(),
+      name: document.getElementById('name').value.trim(),
+      category: document.getElementById('category').value,
+      note: document.getElementById('note').value.trim(),
+      status: 'in'
+    });
+    save(); render();
+    e.target.reset();
+  });
+
+  toolbar.addEventListener('click', e => {
+    const c = e.target.dataset.cat;
+    if (c) { filter = c; render(); }
+  });
+
+  grid.addEventListener('click', e => {
+    const cardEl = e.target.closest('.card');
+    if (!cardEl) return;
+    const item = items.find(i => i.id == cardEl.dataset.id);
+    if (e.target.classList.contains('del')) {
+      items = items.filter(i => i.id !== item.id);
+    } else if (e.target.dataset.status) {
+      item.status = e.target.dataset.status;
+    }
+    save(); render();
+  });
+
+  render();
+</script>
+</body>
+</html>
